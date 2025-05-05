@@ -1,0 +1,44 @@
+{
+  "cli": {
+    "version": ">= 16.4.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "buildType": "apk",
+        "ndk": "23.1.7779620",
+        "env": {
+          "ANDROID_NDK_HOME": "/home/expo/Android/Sdk/ndk/23.1.7779620"
+        }
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "ndk": "23.1.7779620",
+        "env": {
+          "ANDROID_NDK_HOME": "/home/expo/Android/Sdk/ndk/23.1.7779620"
+        },
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "ndk": "23.1.7779620",
+        "env": {
+          "ANDROID_NDK_HOME": "/home/expo/Android/Sdk/ndk/23.1.7779620"
+        },
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

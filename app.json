@@ -8,7 +8,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bolt.expostarter"
     },
     "web": {
       "bundler": "metro",
@@ -34,8 +35,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "f3924d0c-d4f4-414d-810a-dc0726a6b061"
+        "projectId": "e43453c3-8cbc-463e-8996-9db7599a5c6d"
       }
-    }
+    },
+    "owner": "madhavseth"
   }
 }

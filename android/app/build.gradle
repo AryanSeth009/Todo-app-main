@@ -86,19 +86,14 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.bolt.expostarter'
+    namespace "com.todoma"
     defaultConfig {
-        applicationId 'com.bolt.expostarter'
+        applicationId "com.todoma"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.0"
     }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion rootProject.ext.composeCompilerVersion
-    }
-
     signingConfigs {
         debug {
             storeFile file('debug.keystore')

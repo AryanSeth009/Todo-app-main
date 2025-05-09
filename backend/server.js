@@ -19,7 +19,7 @@ const app = express();
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.FRONTEND_URL 
-    : 'http://localhost:3000',
+    : ['http://localhost:3000', 'http://localhost:19006', 'http://localhost:19000', 'http://localhost:8081'],
   credentials: true
 }));
 app.use(express.json());
@@ -237,22 +237,14 @@ app.post('/api/tasks', auth, async (req, res) => {
 app.get('/api/tasks', auth, async (req, res) => {
   try {
     const { date } = req.query;
-    let query = { userId: req.user._id };
+    let query = { user: req.user._id }; // Changed userId to user to match schema
     
     // If date is provided, filter tasks for that specific date
     if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-      
+      const queryDate = new Date(date).toISOString().split('T')[0];
       query = {
         ...query,
-        date: {
-          $gte: startOfDay,
-          $lte: endOfDay
-        }
+        startTime: { $regex: `^${queryDate}` } // Match tasks that start on this date
       };
     }
     

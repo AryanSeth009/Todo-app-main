@@ -2,38 +2,21 @@
 
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
         minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '24')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
-        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '35')
-        kotlinVersion = "1.9.24"
-        ndkVersion = "23.1.7779620"
-        composeCompilerVersion = "1.5.14"
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.8.10'
+        ndkVersion = "29.0.13113456"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle')
-        classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
-    }
-}
-
-plugins {
-    id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
-}
-
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            android {
-                composeOptions {
-                    kotlinCompilerExtensionVersion = "1.5.14"
-                }
-            }
-        }
+        classpath('com.android.tools.build:gradle:8.0.1')
+        classpath('com.facebook.react:react-native-gradle-plugin:0.76.9')
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10")
     }
 }
 

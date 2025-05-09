@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 16.4.0",
+    "version": ">= 5.9.1",
     "appVersionSource": "remote"
   },
   "build": {
@@ -37,8 +37,5 @@
         "buildType": "app-bundle"
       }
     }
-  },
-  "submit": {
-    "production": {}
   }
 }

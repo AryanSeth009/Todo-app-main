@@ -1,9 +1,9 @@
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import TaskCard from './TaskCard';
 import { ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useTaskStore } from '@/store/taskStore';
-import { useEffect } from 'react';
 
 export default function TaskSection() {
   const { colors, typography } = useTheme();
@@ -18,14 +18,29 @@ export default function TaskSection() {
     syncTasksWithBackend();
   }, []);
   
-  // Filter out any tasks that have completedAt set or completed flag
-  const ongoingTasks = tasks.filter(task => {
+  // Get tasks from the store
+  const activeTasks = useTaskStore((state) => state.activeTasks);
+  const allTasks = useTaskStore((state) => state.tasks);
+  
+  // Log all available tasks for debugging
+  console.log('All tasks in store:', allTasks.length);
+  console.log('Active tasks in store:', activeTasks.length);
+  
+  // Get completed tasks for reference
+  const completedTasks = useTaskStore((state) => state.completedTasks);
+  
+  // Create a set of completed task IDs for quick lookup
+  const completedTaskIds = new Set(completedTasks.map(task => task.id));
+  
+  // Use activeTasks as the primary source and ensure they're not in the completed list
+  const ongoingTasks = activeTasks.filter(task => {
     // Debug log each task
-    console.log('Processing task:', {
+    console.log('Processing task for display:', {
       id: task.id,
       title: task.title,
       completedAt: task.completedAt,
-      completed: task.completed
+      completed: task.completed,
+      isInCompletedList: completedTaskIds.has(task.id)
     });
     
     // Ensure task has an ID
@@ -34,8 +49,17 @@ export default function TaskSection() {
       return false;
     }
     
-    return !task.completedAt && !task.completed;
+    // Multiple checks to ensure task is not completed
+    return !task.completedAt && 
+           !task.completed && 
+           !completedTaskIds.has(task.id);
   });
+  
+  // Always use ongoingTasks for display
+  const tasksToDisplay = ongoingTasks;
+  
+  console.log('Active tasks from store:', activeTasks.length);
+  console.log('Ongoing tasks after filtering:', ongoingTasks.length);
   
   // Debug logging
   useEffect(() => {
@@ -60,7 +84,8 @@ export default function TaskSection() {
     }
   };
 
-  if (isLoading) {
+  // Only show loading indicator when there are no tasks yet
+  if (isLoading && tasks.length === 0) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -118,13 +143,14 @@ export default function TaskSection() {
       </View>
       
       <View style={styles.taskList}>
-        {ongoingTasks.length > 0 ? (
-          ongoingTasks.map((task) => {
+        {tasksToDisplay.length > 0 ? (
+          tasksToDisplay.map((task) => {
             // Ensure task has an ID before rendering
             if (!task.id) {
               console.error('Rendering task without ID:', task);
               return null;
             }
+            console.log('Rendering task:', task.title);
             return <TaskCard key={task.id} task={task} />;
           })
         ) : (

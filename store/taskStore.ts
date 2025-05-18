@@ -4,7 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Task, ScheduledTask, TeamMember } from '@/types/task';
 import { Category } from '@/types/category';
 import { api } from '@/services/api';
-import { notificationService } from '@/services/notificationService';
 
 interface TaskState {
   // State
@@ -109,15 +108,22 @@ export const useTaskStore = create(
 
           console.log('TaskStore - Created temporary task:', tempTask);
 
-          // Add to local state first
+          // Add to local state first and set isLoading to false to show the task immediately
           set((state) => {
             console.log('TaskStore - Adding to local state');
+            // Make sure the task is added to both tasks and activeTasks arrays
+            const newTasks = [...state.tasks, tempTask];
+            const newActiveTasks = [...state.activeTasks, tempTask];
+            
+            console.log('New tasks count:', newTasks.length);
+            console.log('New active tasks count:', newActiveTasks.length);
+            
             return {
-              tasks: [...state.tasks, tempTask],
-              activeTasks: [...state.activeTasks, tempTask],
+              tasks: newTasks,
+              activeTasks: newActiveTasks,
               completedTasks: state.completedTasks,
               scheduledTasks: state.scheduledTasks,
-              isLoading: state.isLoading,
+              isLoading: false, // Set to false immediately to show the task
               error: state.error
             };
           });
@@ -130,23 +136,32 @@ export const useTaskStore = create(
             // Update local state with the real task
             set((state) => {
               console.log('TaskStore - Updating local state with backend task');
+              
+              // Update both tasks and activeTasks arrays with the real task
+              const updatedTasks = state.tasks.map((t: Task) => 
+                t.id === tempTask.id ? createdTask : t
+              );
+              
+              const updatedActiveTasks = state.activeTasks.map((t: Task) => 
+                t.id === tempTask.id ? createdTask : t
+              );
+              
+              console.log('Updated tasks count:', updatedTasks.length);
+              console.log('Updated active tasks count:', updatedActiveTasks.length);
+              
               return {
-                tasks: state.tasks.map((t: Task) => 
-                  t.id === tempTask.id ? createdTask : t
-                ),
-                activeTasks: state.activeTasks.map((t: Task) => 
-                  t.id === tempTask.id ? createdTask : t
-                ),
+                tasks: updatedTasks,
+                activeTasks: updatedActiveTasks,
                 completedTasks: state.completedTasks,
                 scheduledTasks: state.scheduledTasks,
-                isLoading: state.isLoading,
+                isLoading: false, // Ensure loading is false
                 error: state.error
               };
             });
 
             console.log('TaskStore - Task added successfully');
             // Schedule notification for the new task
-            notificationService.scheduleTaskNotification(createdTask);
+            // Notification functionality removed
           } catch (error) {
             console.error('TaskStore - Error creating task in backend:', error);
             // Remove temporary task from state
@@ -273,13 +288,18 @@ export const useTaskStore = create(
             
             console.log('Adding task to completed tasks:', completedTask);
             
+            // Important: Update both tasks and activeTasks arrays
             return {
+              // Update main tasks array - keep the task but mark as completed
+              tasks: state.tasks.map(t => t.id === taskId ? completedTask : t),
               // Remove from active tasks
-              tasks: state.tasks.filter(t => t.id !== taskId),
+              activeTasks: state.activeTasks.filter(t => t.id !== taskId),
               // Add to completed tasks
               completedTasks: [...state.completedTasks, completedTask]
             };
           });
+          
+          console.log('Task completion state updated');
           
           // Run cleanup to remove tasks older than 1 month
           get().cleanupOldTasks();
@@ -356,10 +376,10 @@ export const useTaskStore = create(
             ),
         }));
           // Cancel existing notification and schedule new one if endTime changed
-          notificationService.cancelTaskNotification(taskId);
-          if (updates.endTime) {
-            notificationService.scheduleTaskNotification(updatedTask);
-          }
+          // notificationService.cancelTaskNotification(taskId);
+          // if (updates.endTime) {
+          // Notification functionality removed
+          // }
         } catch (error) {
           console.error('Error updating task:', error);
           set({ 
@@ -395,7 +415,7 @@ export const useTaskStore = create(
             tasks: state.tasks.filter((task) => task.id !== taskId),
         }));
           // Cancel notification when task is deleted
-          notificationService.cancelTaskNotification(taskId);
+          // notificationService.cancelTaskNotification(taskId);
         } catch (error) {
           console.error('Error deleting task:', error);
           set({ 
@@ -480,7 +500,7 @@ export const useTaskStore = create(
           
           // Schedule daily summary notification
           try {
-            notificationService.scheduleDailySummaryNotification();
+            // Notification functionality removed
           } catch (error) {
             console.error('Error scheduling daily summary notification:', error);
             // Continue with initialization even if notification fails
@@ -497,13 +517,17 @@ export const useTaskStore = create(
       // Sync tasks with backend
       syncTasksWithBackend: async () => {
         try {
-          set({ isLoading: true, error: null });
+          // Don't hide existing tasks while loading
+          set(state => ({ ...state, isLoading: true, error: null }));
           console.log('Syncing tasks with backend');
+          
+          // Get current state to preserve tasks if API fails
+          const currentState = get();
           
           const backendTasks = await api.getTasks();
           console.log('Backend tasks received:', backendTasks);
           
-          if (backendTasks && Array.isArray(backendTasks)) {
+          if (backendTasks && Array.isArray(backendTasks) && backendTasks.length > 0) {
             console.log('API - Retrieved tasks:', backendTasks.length);
             
             // Separate tasks by type
@@ -522,7 +546,7 @@ export const useTaskStore = create(
               });
               
               // Handle completed tasks
-              if (task.completedAt) {
+              if (task.completedAt || task.completed) {
                 // Skip tasks completed more than a month ago
                 if (!isTaskOlderThanOneMonth(task)) {
                   completedTasks.push(task);
@@ -546,7 +570,7 @@ export const useTaskStore = create(
               else {
                 // Only include tasks that haven't passed their completion time
                 if (!isTaskPastCompletionTime(task)) {
-                activeTasks.push(task);
+                  activeTasks.push(task);
                 } else {
                   // Move past-due tasks to completed
                   const completedTask = {
@@ -565,17 +589,18 @@ export const useTaskStore = create(
             
             // Update state with backend data
             set({
-              tasks: activeTasks,
+              tasks: [...activeTasks, ...completedTasks], // Store both active and completed tasks in the tasks array
+              activeTasks: activeTasks,
               completedTasks: completedTasks,
               scheduledTasks: scheduledTasks,
               isLoading: false
             });
+            
+            console.log('State updated with tasks:', [...activeTasks, ...completedTasks].length);
           } else {
-            console.error('Invalid tasks response:', backendTasks);
-            set({ 
-              error: 'Invalid tasks response from server',
-              isLoading: false 
-            });
+            // If backend returned empty array or no tasks, keep existing tasks
+            console.log('No tasks returned from backend, keeping existing tasks');
+            set(state => ({ ...state, isLoading: false }));
           }
         } catch (error: any) {
           console.error('Error syncing tasks with backend:', error);
@@ -594,6 +619,7 @@ export const useTaskStore = create(
             return;
           }
           
+          // Keep existing tasks on API error
           set({ 
             error: error instanceof Error ? error.message : 'Failed to sync tasks',
             isLoading: false 
@@ -603,25 +629,6 @@ export const useTaskStore = create(
 
       sendDailySummary: () => {
         const state = get();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const todayTasks = state.tasks.filter(task => {
-          const taskDate = new Date(task.createdAt);
-          taskDate.setHours(0, 0, 0, 0);
-          return taskDate.getTime() === today.getTime();
-        });
-
-        const completedTasks = todayTasks.filter(task => task.completed).length;
-        const totalTasks = todayTasks.length;
-
-        if (state.user?.name) {
-          notificationService.sendDailySummaryNotification(
-            completedTasks,
-            totalTasks,
-            state.user.name
-          );
-        }
       }
 }),
 {

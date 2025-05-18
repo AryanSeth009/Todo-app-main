@@ -5,7 +5,7 @@ import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTaskStore } from '@/store/taskStore';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { useTheme } from '@/hooks/useTheme';
-import { notificationService } from '@/services/notificationService';
+import React from 'react';
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
@@ -20,9 +20,7 @@ export default function RootLayout() {
   useLayoutEffect(() => {
     const setup = async () => {
       try {
-        // Configure notifications
-        notificationService.configure();
-        notificationService.createNotificationChannel();
+        // Notification service has been removed
 
         // Wait for next tick
         await new Promise(resolve => setTimeout(resolve, 0));
